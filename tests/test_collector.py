@@ -126,3 +126,26 @@ def test_parse_yandex_xml():
         ("bereg.ru", "Рыба оптом", "Свежая рыба для ресторанов")]
     empty = b'<yandexsearch><response><error code="15">nothing</error></response></yandexsearch>'
     assert search.parse_xml(empty) == []
+
+
+def test_candidates_mix_queries(monkeypatch, tmp_path):
+    by_query = {"q1": [search.Hit("", f"https://a{i}.ru/", "") for i in range(5)],
+                "q2": [search.Hit("", f"https://b{i}.ru/", "") for i in range(5)]}
+    monkeypatch.setattr(run, "CACHE", tmp_path)
+    monkeypatch.setattr(run, "SEARCH", lambda q, n, r: by_query[q])
+    got = run.candidates({"queries": ["q1", "q2"]}, {"name": "Москва", "yandex_region": 213}, 4)
+    assert [h.domain for h in got] == ["a0.ru", "b0.ru", "a1.ru", "b1.ru"]
+
+
+def test_score_halves_when_region_excludes_city():
+    terms = {f: {"value": "x", "quote": "y"} for f in ("min_order", "price", "delivery", "documents")}
+    far = score.score(_card(city="Москва", phones=["+7"], regions={"value": "Москва и МО", "quote": "q"},
+                            **terms), "Екатеринбург")
+    near = score.score(_card(city="Екатеринбург", phones=["+7"], **terms), "Екатеринбург")
+    assert far["score"] < near["score"] / 2
+    assert "По сайту работают только: Москва и МО" in far["minuses"]
+
+
+def test_score_understands_federal_district():
+    c = score.score(_card(city="Челябинск", regions={"value": "УрФО", "quote": "q"}), "Екатеринбург")
+    assert "Пишут, что возят в Екатеринбург или по России" in c["reasons"]

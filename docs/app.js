@@ -183,7 +183,7 @@ function renderShortlist() {
   const ol = $("#shortlist");
   ol.replaceChildren();
   $("#slEmpty").hidden = ids.length > 0;
-  $(".side").classList.toggle("empty", !ids.length);  // на телефоне пустой список не занимает экран
+  $(".side").classList.toggle("is-empty", !ids.length);  // на телефоне пустой список не занимает экран
   $("#slCount").textContent = ids.length ? `· ${ids.length}` : "";
   $("#compareBtn").disabled = ids.length < 2;
   $("#compareBtn").textContent = ids.length > 4 ? "Сравнить первых четырёх" : "Сравнить отмеченных";

@@ -112,7 +112,7 @@ def call_llm(prompt: str, attempts: int = 4) -> str:
     На 429 и 5xx ждёт и повторяет: при сборе десятков сайтов лимит провайдера — норма."""
     body = {"model": os.environ.get("LLM_MODEL", "gemini-flash"),
             "messages": [{"role": "user", "content": prompt}],
-            "temperature": 0, "max_tokens": 4000,
+            "temperature": 0, "max_tokens": int(os.environ.get("LLM_MAX_TOKENS", "8000")),
             "response_format": {"type": "json_object"}}
     req = urllib.request.Request(
         os.environ["LLM_BASE_URL"].rstrip("/") + "/chat/completions",

@@ -14,6 +14,12 @@ WEIGHTS = {
 MAX_SCORE = (WEIGHTS["same_city"] + WEIGHTS["producer"] + WEIGHTS["phone"]
              + WEIGHTS["email"] + WEIGHTS["inn"] + WEIGHTS["documents"]
              + WEIGHTS["min_order"] + WEIGHTS["price"] + WEIGHTS["delivery"])
+# Как сайты пишут про регион вокруг города: «УрФО», «Ленобласть», «ЦФО»
+CITY_AREAS = {
+    "Москва": ("москв", "цфо", "центральн"),
+    "Санкт-Петербург": ("петербур", "спб", "ленинград", "ленобл", "сзфо", "северо-запад"),
+    "Екатеринбург": ("екатеринбур", "свердлов", "урфо", "урал"),
+}
 NATIONWIDE = ("вся россия", "всей россии", "по россии", "по всей", "рф", "регионы")
 
 
@@ -27,8 +33,9 @@ def _city_root(city: str) -> str:
 
 
 def score(card: dict, city: str) -> dict:
-    """Добавляет к карточке score (0–100), reasons, minuses, ask."""
-    reasons, minuses, ask, points = [], [], [], 0
+    """Добавляет к карточке score (0–100), reasons, minuses, ask.
+    Регион работы известен и вашего города в нём нет — баллы делятся пополам."""
+    reasons, minuses, ask, points, far = [], [], [], 0, False
     root = _city_root(city)
     regions = (card.get("regions") or {}).get("value", "") if _has(card, "regions") else ""
     delivery = (card.get("delivery") or {}).get("value", "") if _has(card, "delivery") else ""
@@ -37,9 +44,14 @@ def score(card: dict, city: str) -> dict:
     if root in (card.get("city") or "").lower():
         points += WEIGHTS["same_city"]
         reasons.append(f"Склад или офис в городе {city}")
-    elif root in where or any(w in where for w in NATIONWIDE):
+    elif any(w in where for w in (root, *CITY_AREAS.get(city, ()), *NATIONWIDE)):
         points += WEIGHTS["delivers"]
         reasons.append(f"Пишут, что возят в {city} или по России")
+    elif regions:
+        # сайт прямо называет, где работают, и вашего города там нет
+        far = True
+        minuses.append(f"По сайту работают только: {regions}")
+        ask.append(f"Возите ли в {city}, за сколько дней и сколько стоит доставка?")
     else:
         minuses.append("Не видно, возят ли в ваш город")
         ask.append(f"Возите ли в {city}, за сколько дней и сколько стоит доставка?")
@@ -89,6 +101,8 @@ def score(card: dict, city: str) -> dict:
 
     filled = sum(_has(card, f) for f in ("min_order", "price", "delivery", "regions", "documents"))
     filled += bool(card.get("phones") or card.get("emails")) + bool(card.get("inn"))
+    if far:
+        points //= 2  # полные условия не помогут, если поставщик сюда не возит
     card.update(score=round(100 * points / MAX_SCORE), reasons=reasons,
                 minuses=minuses, ask=ask[:3], completeness=round(100 * filled / 7))
     return card

@@ -11,6 +11,7 @@ from __future__ import annotations
 import argparse
 import datetime as dt
 import hashlib
+import itertools
 import json
 import os
 import pathlib
@@ -38,12 +39,14 @@ def _cached(kind: str, key: str, make):
 
 def candidates(category: dict, city: dict, per_pair: int) -> list[search.Hit]:
     """Сайты поставщиков из выдачи: без агрегаторов и повторов домена."""
-    hits = []
+    lists = []
     for q in category["queries"]:
         query = q.format(city=city["name"])
         raw = _cached("search", f"{query}|{city['yandex_region']}",
                       lambda q=query: [h.__dict__ for h in SEARCH(q, 20, city["yandex_region"])])
-        hits += [search.Hit(**h) for h in raw]
+        lists.append([search.Hit(**h) for h in raw])
+    # запросы вперемешку: первый запрос не должен забрать все места
+    hits = [h for row in itertools.zip_longest(*lists) for h in row if h]
     out, seen = [], set()
     for h in hits:
         if h.domain in seen or search.is_aggregator(h.domain):
