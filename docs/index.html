@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Поиск поставщиков продуктов питания</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="top">
+  <div class="wrap top-in">
+    <div>
+      <h1>Поставщики для кухни и магазина</h1>
+      <p class="sub">Сайты поставщиков, прочитанные за вас: условия, контакты и с кем связаться первым</p>
+    </div>
+    <button class="ghost" id="howBtn">Как это работает</button>
+  </div>
+</header>
+
+<section class="filters wrap" aria-label="Фильтры">
+  <div class="field grow">
+    <span class="lbl">Что ищем</span>
+    <div class="chips" id="cats" role="radiogroup"></div>
+  </div>
+  <div class="row">
+    <label class="field">
+      <span class="lbl">Город закупки</span>
+      <select id="city"></select>
+    </label>
+    <label class="field grow">
+      <span class="lbl">Название или товар</span>
+      <input id="q" type="search" placeholder="например, японика или контейнер">
+    </label>
+    <label class="field">
+      <span class="lbl">Сначала</span>
+      <select id="sort">
+        <option value="score">с кем связаться первым</option>
+        <option value="completeness">больше данных</option>
+        <option value="name">по названию</option>
+      </select>
+    </label>
+  </div>
+  <div class="toggles">
+    <label><input type="checkbox" data-f="price"> есть цена</label>
+    <label><input type="checkbox" data-f="min_order"> известен мин. заказ</label>
+    <label><input type="checkbox" data-f="documents"> пишут про документы</label>
+    <label><input type="checkbox" data-f="producer"> только производители</label>
+    <label><input type="checkbox" data-f="shortlist"> только мой список</label>
+  </div>
+</section>
+
+<main class="wrap layout">
+  <section aria-label="Поставщики">
+    <div class="count" id="count"></div>
+    <div id="list"></div>
+  </section>
+  <aside class="side" aria-label="Мой список">
+    <div class="side-in">
+      <h2>Мой список <span class="muted" id="slCount"></span></h2>
+      <p class="muted small" id="slEmpty">Отмечайте поставщиков звёздочкой — здесь появится план обзвона со статусами и заметками.</p>
+      <ol id="shortlist"></ol>
+      <div class="side-actions">
+        <button id="compareBtn" disabled>Сравнить отмеченных</button>
+        <button class="ghost" id="csvBtn" disabled>Скачать таблицу</button>
+      </div>
+    </div>
+  </aside>
+</main>
+
+<footer class="wrap foot">
+  <span id="stamp"></span> · Данные взяты с сайтов самих поставщиков; у каждого условия — цитата и ссылка на страницу.
+</footer>
+
+<dialog id="compare"><div class="dlg">
+  <div class="dlg-head"><h2>Сравнение</h2><button class="ghost" data-close>Закрыть</button></div>
+  <div class="table-wrap"><table id="cmpTable"></table></div>
+</div></dialog>
+
+<dialog id="how"><div class="dlg narrow">
+  <div class="dlg-head"><h2>Как это работает</h2><button class="ghost" data-close>Закрыть</button></div>
+  <ol class="how">
+    <li><b>Поиск.</b> По категории и городу сервис ищет в Яндексе и отбрасывает доски объявлений, справочники и маркетплейсы — там нет одного поставщика, только чужие объявления.</li>
+    <li><b>Чтение сайта.</b> С сайта поставщика берутся главная и страницы контактов, доставки, документов и условий опта.</li>
+    <li><b>Разбор.</b> Телефоны, почты и ИНН достаются правилами, ИНН проверяется по контрольной сумме. Минимальный заказ, цены, доставку и документы читает языковая модель.</li>
+    <li><b>Проверка.</b> Модель обязана подтвердить каждое условие дословной цитатой с сайта. Цитаты на странице нет — условие не показывается: лучше «нет данных», чем выдумка.</li>
+    <li><b>Решение.</b> Баллы считаются открыто: свой город или доставка в него, производитель, контакты, ИНН, документы, известные цена и минимальная партия. Чего нет на сайте — попадает в «Что спросить при звонке».</li>
+    <li><b>Работа со списком.</b> Отмеченные поставщики идут в план обзвона: статус, заметка, сравнение и выгрузка в таблицу.</li>
+  </ol>
+  <p class="muted small">Прототип показывает базу, собранную заранее. В рабочей версии сбор идёт по запросу пользователя и по расписанию, заметки хранятся на сервере и видны всей закупке.</p>
+</div></dialog>
+
+<template id="cardTpl">
+  <article class="card">
+    <div class="card-head">
+      <div class="score" title="Баллы приоритета: за что начислены — ниже"><b></b><span>из 100</span></div>
+      <div class="title">
+        <h3><a target="_blank" rel="noopener"></a></h3>
+        <div class="meta"></div>
+      </div>
+      <button class="star" aria-pressed="false" title="В мой список">☆</button>
+    </div>
+    <p class="summary"></p>
+    <div class="products"></div>
+    <dl class="facts"></dl>
+    <div class="why">
+      <ul class="plus"></ul>
+      <ul class="minus"></ul>
+    </div>
+    <div class="ask"></div>
+    <div class="contacts"></div>
+  </article>
+</template>
+
+<script src="data.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
